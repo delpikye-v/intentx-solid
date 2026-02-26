@@ -63,7 +63,7 @@ npm install intentx-solid
 ## 🧩 Core Logic (Framework-Agnostic)
 
 ``` ts
-import { createLogic } from "intentx-runtime"
+import { createLogic } from "intentx-solid"
 
 export const counterLogic = createLogic({
   name: "counter",
@@ -168,7 +168,7 @@ useLogic(logic, {
 Custom bus:
 
 ``` ts
-import { createIntentBus } from "intentx-runtime"
+import { createIntentBus } from "intentx-solid"
 
 const bus = createIntentBus()
 

@@ -1,8 +1,9 @@
-import type { Scope, LogicFactory, LogicActions } from "intentx-runtime";
-import { getScopedBus } from "./bus";
-import type { ComputedDef, LogicInstance } from "./types";
-export declare function useLogic<S extends object, C extends ComputedDef<S>, A extends LogicActions>(logic: LogicFactory<S, C, A>, options?: {
+import type { Scope, LogicFactory, LogicActions, ComputedDef } from "intentx-runtime";
+import type { IntentBus } from "./bus";
+import type { LogicApi } from "./types";
+export type LogicOptions = {
     scope?: Scope | string;
     sharedBus?: boolean;
-    bus?: ReturnType<typeof getScopedBus>;
-}): LogicInstance<S, C, A>;
+    bus?: IntentBus;
+};
+export declare function useLogic<S extends object, C extends ComputedDef<S>, A extends LogicActions>(logic: LogicFactory<S, C, A>, options?: LogicOptions): LogicApi<S, C, A>;
