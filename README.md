@@ -6,7 +6,8 @@
 
 ---
 
-`intentx-solid` is an architectural layer for Solid.
+`intentx-solid` enforces a strict architectural boundary between deterministic business logic and reactive UI in Solid.
+
 It enforces a strict separation between:
 - Business Logic (deterministic runtime)
 - UI Rendering (fine-grained reactivity)
@@ -27,28 +28,25 @@ Use it when your UI starts to feel like business logic.
 
 Avoid it when:
 
-❌ You only need simple `createSignal`  
-❌ You want reducer-style state  
-❌ Your state is purely local UI  
+❌ This library introduces an architectural boundary.  
+❌ If you don’t need architectural boundaries, don’t use it.  
 
 ---
 
-## 🧠 Mental Model
+## 🧠  Mental Model
+
 ```txt
-    UI Event
-       ↓
-    emit(intent)
-       ↓
-    intent handler
-       ↓
-    setState
-       ↓
-    computed re-evaluates
-       ↓
-    Solid store updates
-       ↓
-    Fine-grained reactivity updates UI
+UI / HTTP / Queue / Cron
+        ↓
+  intentx-runtime
+        ↓
+Fine-grained reactivity updates UI
 ```
+
+Core principle:
+
+> Intent is the only mutation entry point.
+> The [runtime](https://www.npmjs.com/package/intentx-runtime) owns behavior. UI only triggers intent.
 
 ---
 
@@ -61,6 +59,8 @@ npm install intentx-solid
 ---
 
 ## 🧩 Core Logic (Framework-Agnostic)
+
+Even though this is the React package, the runtime is fully usable without React.
 
 ``` ts
 import { createLogic } from "intentx-solid"
@@ -76,22 +76,20 @@ export const counterLogic = createLogic({
     double: ({ state }) => state.count * 2
   },
 
-  actions: ({ setState }) => ({
-    inc() {
-      setState(d => {
-        d.count++
-      })
-    }
-  })
+  intents: (bus) => {
+    bus.on("inc", ({ setState }) => {
+      setState((s) => {
+        s.count++;
+      });
+    });
+  },
+
+  actions: {
+    inc({ emit }) {
+      return () => emit("inc");
+    },
+  },
 })
-```
-
----
-
-## 🔌 Solid Adapter
-
-``` ts
-export { useLogic }
 ```
 
 ---
@@ -104,11 +102,16 @@ import { counterLogic } from "./counter.logic"
 
 export default function Counter() {
   const counter = useLogic(counterLogic)
+  // const { actions, emit, store } = useLogic(counterLogic)
 
   return (
     <>
       <button onClick={counter.actions.inc}>
-        {counter.store.count}
+        {counter.state.count}
+      </button>
+
+      <button onClick={() => emit("inc")}>
+        {counter.state.count}
       </button>
 
       <p>Double: {counter.store.double}</p>
@@ -148,34 +151,90 @@ const counter = useLogic(counterLogic)
 
 ---
 
-## 📡 Scoped Bus
+## 📡  Multiple Logic Communication (Bus)
 
-``` ts
-useLogic(logic, {
-  sharedBus: true
-})
-```
+Each `logic` instance is isolated by default.
 
-Scoped:
+To enable communication between runtimes, you can share an Intent Bus.
 
-``` ts
+---
+
+### 1️⃣ Scoped Shared Bus (Recommended)
+
+```ts
+import { useLogic } from "intentx-solid"
+
+// ✅ Same scope → shared bus
 useLogic(logic, {
   scope: "dashboard",
   sharedBus: true
 })
+
+// ❌ Different scope → different bus
+useLogic(logic, {
+  scope: "settings",
+  sharedBus: true
+})
 ```
 
-Custom bus:
+<b>How it works</b>
 
-``` ts
-import { createIntentBus } from "intentx-solid"
+When sharedBus: true is enabled:
+
+- A singleton bus is created per scope
+
+- Same scope → same bus instance
+
+- Different scope → different bus
+
+- No global leakage
+
+If no `scope` is provided:
+
+```ts
+useLogic(logic, {
+  sharedBus: true
+})
+```
+
+→ uses a default global scope bus.
+
+---
+
+### 2️⃣ Custom Bus (Advanced / Cross-Scope)
+
+```ts
+import { createIntentBus } from "intentx-react"
 
 const bus = createIntentBus()
 
-useLogic(logic, {
-  bus
-})
+useLogic(logicA, { bus })
+useLogic(logicB, { bus })
+
 ```
+
+<b>Behavior</b>
+
+- Full cross-scope communication
+- Manual orchestration control
+- Suitable for:
+  - Microfrontend
+  - App-wide coordination
+  - Complex workflow systems
+
+### 🔍 Behavior Comparison
+
+| Mode                 | Isolation    | Scope-aware | Cross-scope  | Recommended           |
+| -------------------- | -----------  | ----------- | ------------ | --------------------- |
+| Default (no options) | ✅ Full      | ❌           | ❌           | Small/local logic     |
+| `sharedBus: true`    | ❌ Per scope | ✅           | ❌           | Modular apps          |
+| Custom `bus`         | ❌ Manual    | ❌           | ✅           | Advanced architecture |
+
+### 🎯 Recommendation
+
+✅ Use sharedBus for modular communication.  
+✅ Use custom bus for orchestration layer.  
+🚫 Avoid global single bus without scope in large apps.  
 
 ---
 
@@ -248,13 +307,13 @@ That is the real split.
 
 ## 🔍 Comparison
 
-| Criteria               | Solid only  | intentx-solid |
-| ---------------------- | ----------- | ------------- |
-| Local UI state         | ✅          | ❌ Overkill    |
-| Async orchestration    | ⚠️ Manual   | ✅ Built-in    |
-| Cross-runtime reuse    | ❌          | ✅             |
-| Deterministic snapshot | ❌          | ✅             |
 
+| Criteria                | Solid primitives | intentx-solid |
+| ----------------------- | ---------------- | ------------- |
+| Local UI                | Excellent        | Overkill      |
+| Async orchestration     | Manual           | Structured    |
+| Cross-environment reuse | No               | Yes           |
+| Deterministic runtime   | No               | Yes           |
 
 
 - UI consumes state.
@@ -312,19 +371,18 @@ createEffect(async () => {
   }
 })
 ```
-
 And moving it here:
 
 ```ts
 // ✅ Logic outside UI
-actions: ({ setState }) => ({
-  async loadUser(id: string) {
+intents: (bus) => {
+  bus.on("loadUser", async ({ setState }) => {
     const data = await fetchUser(id)
     setState(d => {
       d.user = data
     })
-  }
-})
+  });
+}
 ```
 
 Now UI only emits intent.
@@ -338,6 +396,15 @@ Rendering is reactive.
 Business logic should be deterministic.
 
 intentx-solid ensures they never mix.
+
+---
+
+## ❌ What This Is Not
+
+- Not a signal replacement
+- Not a store wrapper
+- Not a UI state helper
+- Not a reducer abstraction
 
 ---
 

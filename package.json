@@ -1,6 +1,6 @@
 {
   "name": "intentx-solid",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Intent-driven logic adapter for SolidJS. Connects intentx-runtime with Solid's fine-grained reactivity.",
   "license": "MIT",
   "author": "Delpi.Kye",
