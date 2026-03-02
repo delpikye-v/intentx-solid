@@ -131,14 +131,13 @@ No providers required (unless you want shared context).
 const counter = useLogic(counterLogic)
 ```
 
-```txt
-    {
-      runtime,
-      store,
-      state,
-      actions,
-      emit
-    }
+```ts
+  {
+    store, //
+    state, // alias state
+    actions, // actions -> emit
+    emit // directly
+  }
 ```
 
 🔥 Important
