@@ -1,15 +1,13 @@
 {
   "name": "intentx-solid",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "Intent-driven logic adapter for SolidJS. Connects intentx-runtime with Solid's fine-grained reactivity.",
   "license": "MIT",
   "author": "Delpi.Kye",
   "type": "module",
-
   "main": "build/index.cjs",
   "module": "build/index.js",
   "types": "build/index.d.ts",
-
   "exports": {
     ".": {
       "import": "./build/index.js",
@@ -17,29 +15,22 @@
       "types": "./build/index.d.ts"
     }
   },
-
   "files": [
     "build"
   ],
-
   "sideEffects": false,
-
   "repository": {
     "type": "git",
     "url": "https://github.com/delpikye-v/intentx-solid.git"
   },
-
   "homepage": "https://github.com/delpikye-v/intentx-solid#readme",
-
   "bugs": {
     "url": "https://github.com/delpikye-v/intentx-solid/issues"
   },
-
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/delpikye-v"
   },
-
   "keywords": [
     "solid",
     "solidjs",
@@ -52,35 +43,30 @@
     "microfrontend",
     "architecture"
   ],
-
   "engines": {
     "node": ">=18"
   },
-
   "scripts": {
     "clean": "rimraf build",
     "build": "rollup -c",
     "cb": "npm run clean && npm run build"
   },
-
   "peerDependencies": {
     "solid-js": "^1.8.0"
   },
-
   "dependencies": {
-    "intentx-runtime": "^0.2.4"
+    "intentx-runtime": "^0.2.6"
   },
-
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.3.0",
+    "rimraf": "^5.0.5",
     "rollup": "^4.9.6",
     "rollup-plugin-dts": "^6.3.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-typescript2": "^0.36.0",
-    "rimraf": "^5.0.5",
     "tslib": "^2.6.2",
     "typescript": "^5.3.3",
     "unplugin-solid": "^1.0.0"
